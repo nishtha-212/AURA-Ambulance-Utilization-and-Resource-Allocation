@@ -1,0 +1,6 @@
+{
+  "name": "AURA – Ambulance Utilization & Routing Assistant",
+  "description": "Operations Research emergency dispatch platform with PuLP & Hungarian ambulance assignment, Dijkstra shortest routing, and fleet analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

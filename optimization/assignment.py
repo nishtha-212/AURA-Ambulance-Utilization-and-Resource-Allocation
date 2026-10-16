@@ -96,6 +96,7 @@ def solve_assignment_pulp(
             "objective_value": 0.0,
             "assignments": [],
             "unserved": [],
+            "unserved_emergencies": [],
             "cross_check_passed": False,
         }
 
@@ -154,6 +155,7 @@ def solve_assignment_pulp(
         "cross_check_passed": cross_check_passed,
         "assignments": assignments,
         "unserved": unserved,
+        "unserved_emergencies": unserved,
     }
 
 

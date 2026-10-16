@@ -61,9 +61,11 @@ export const AmbulancesView: React.FC<AmbulancesViewProps> = ({
   };
 
   const filteredAmbulances = ambulances.filter((a) => {
-    const matchesSearch =
-      a.amb_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.zone.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!a || !a.amb_id) return false;
+    const ambId = (a.amb_id || '').toLowerCase();
+    const ambZone = (a.zone || '').toLowerCase();
+    const query = searchTerm.toLowerCase();
+    const matchesSearch = ambId.includes(query) || ambZone.includes(query);
     const matchesZone = filterZone === 'ALL' || a.zone === filterZone;
     const matchesType = filterType === 'ALL' || a.type === filterType;
     const matchesStatus = filterStatus === 'ALL' || a.status === filterStatus;

@@ -68,9 +68,11 @@ export const EmergenciesView: React.FC<EmergenciesViewProps> = ({
   };
 
   const filteredEmergencies = emergencies.filter((em) => {
-    const matchesSearch =
-      em.em_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      em.zone.toLowerCase().includes(searchTerm.toLowerCase());
+    if (!em || !em.em_id) return false;
+    const emId = (em.em_id || '').toLowerCase();
+    const emZone = (em.zone || '').toLowerCase();
+    const query = searchTerm.toLowerCase();
+    const matchesSearch = emId.includes(query) || emZone.includes(query);
     const matchesZone = filterZone === 'ALL' || em.zone === filterZone;
     const matchesPriority = filterPriority === 'ALL' || em.priority === filterPriority;
     const matchesStatus = filterStatus === 'ALL' || em.status === filterStatus;

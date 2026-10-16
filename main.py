@@ -77,6 +77,9 @@ class EmergencyCreate(BaseModel):
     priority: str = Field("High", example="High")
     weight: Optional[int] = Field(None, example=3)
 
+class EmergencyStatusUpdate(BaseModel):
+    status: str = Field(..., example="Completed")
+
 class OptimizeRequest(BaseModel):
     weighted: bool = Field(True, description="True for priority-weighted min time, False for unweighted")
 
@@ -144,6 +147,17 @@ def add_emergency(payload: EmergencyCreate) -> Dict[str, Any]:
     return {"message": "Emergency logged successfully", "emergency": new_row}
 
 
+@app.patch("/emergencies/{em_id}/status")
+def update_emergency_status(em_id: str, payload: EmergencyStatusUpdate) -> Dict[str, Any]:
+    """Updates the status of an emergency ('Pending', 'Dispatched', 'Completed')."""
+    global calls_df
+    idx = calls_df.index[calls_df["em_id"] == em_id].tolist()
+    if not idx:
+        raise HTTPException(status_code=404, detail=f"Emergency '{em_id}' not found.")
+    calls_df.at[idx[0], "status"] = payload.status
+    return {"message": f"Emergency {em_id} status updated to {payload.status}", "emergency": calls_df.iloc[idx[0]].to_dict()}
+
+
 @app.post("/optimize")
 def run_optimization(payload: OptimizeRequest = OptimizeRequest(weighted=True)) -> Dict[str, Any]:
     """
@@ -157,15 +171,16 @@ def run_optimization(payload: OptimizeRequest = OptimizeRequest(weighted=True)) 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    if calls_df.empty:
-        raise HTTPException(status_code=400, detail="No pending emergencies to assign.")
+    active_calls = calls_df[calls_df["status"] != "Completed"].copy() if "status" in calls_df.columns else calls_df.copy()
+    if active_calls.empty:
+        raise HTTPException(status_code=400, detail="No active emergencies to assign.")
 
     # Ensure travel matrix covers all current ambulances and emergencies
-    current_matrix = compute_consistent_matrix_for_active_state(available_units, calls_df)
+    current_matrix = compute_consistent_matrix_for_active_state(available_units, active_calls)
 
     res = solve_assignment_pulp(
         available_amb_df=available_units,
-        emergencies_df=calls_df,
+        emergencies_df=active_calls,
         travel_time_matrix=current_matrix,
         weighted=payload.weighted
     )
@@ -187,13 +202,14 @@ def get_analytics() -> Dict[str, Any]:
     except ValueError:
         return {"error": "No available ambulances to benchmark."}
 
-    if calls_df.empty:
-        return {"error": "No emergencies logged to benchmark."}
+    active_calls = calls_df[calls_df["status"] != "Completed"].copy() if "status" in calls_df.columns else calls_df.copy()
+    if active_calls.empty:
+        return {"error": "No active emergencies logged to benchmark."}
 
-    current_matrix = compute_consistent_matrix_for_active_state(available_units, calls_df)
+    current_matrix = compute_consistent_matrix_for_active_state(available_units, active_calls)
 
-    base_res = solve_baseline_greedy(available_units, calls_df, current_matrix)
-    opt_res = solve_assignment_pulp(available_units, calls_df, current_matrix, weighted=True)
+    base_res = solve_baseline_greedy(available_units, active_calls, current_matrix)
+    opt_res = solve_assignment_pulp(available_units, active_calls, current_matrix, weighted=True)
 
     return compute_performance_kpis(base_res, opt_res, total_available_fleet=len(available_units))
 

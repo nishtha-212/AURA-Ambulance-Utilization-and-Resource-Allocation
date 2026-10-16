@@ -34,6 +34,7 @@ import {
   optimizeFleet,
   computeRoute,
   getAnalytics,
+  resetBackendData,
   DEFAULT_AMBULANCES,
   DEFAULT_EMERGENCIES,
 } from './services/api';
@@ -199,6 +200,27 @@ export default function App() {
     await handleExecuteOptimization(true);
   };
 
+  // Reset Operational Fleet and Emergency Queue
+  const handleResetData = async () => {
+    setIsLoadingFleet(true);
+    try {
+      await resetBackendData();
+      const [ambs, ems, anlys] = await Promise.all([
+        getAmbulances(),
+        getEmergencies(),
+        getAnalytics(),
+      ]);
+      setAmbulances(ambs);
+      setEmergencies(ems);
+      setAnalytics(anlys);
+      setOptimizationResult(null);
+    } catch {
+      // Gracefully handled
+    } finally {
+      setIsLoadingFleet(false);
+    }
+  };
+
   // Counts for badges
   const availableAmbulanceCount = ambulances.filter((a) => a.status === 'Available').length;
   const activeEmergencies = emergencies.filter((e) => e.status !== 'Completed');
@@ -210,6 +232,8 @@ export default function App() {
       <Header
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
+        onResetData={handleResetData}
+        isResetting={isLoadingFleet}
       />
 
       {/* Tabs Navigation */}

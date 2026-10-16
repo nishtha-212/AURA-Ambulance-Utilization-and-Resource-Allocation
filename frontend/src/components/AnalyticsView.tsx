@@ -17,13 +17,17 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   onRefreshAnalytics,
   isLoading,
 }) => {
-  if (!analytics) {
+  if (!analytics || !analytics.baseline || !analytics.optimized) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-12 text-center space-y-3">
         <BarChart2 className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto" />
-        <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">No Analytics Loaded</h3>
+        <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">
+          {(analytics as any)?.error || 'No Analytics Loaded'}
+        </h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-          Query the analytics engine to compare PuLP optimal dispatch against the greedy baseline model.
+          {(analytics as any)?.error
+            ? 'Ensure there are available ambulances and active emergencies, then re-compute.'
+            : 'Query the analytics engine to compare PuLP optimal dispatch against the greedy baseline model.'}
         </p>
         <button
           onClick={onRefreshAnalytics}
@@ -40,10 +44,10 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   const { baseline, optimized, improvement_pct } = analytics;
 
   // Differences for comparison
-  const totalDiff = +(baseline.total_time - optimized.total_time).toFixed(1);
-  const avgDiff = +(baseline.avg_time - optimized.avg_time).toFixed(1);
-  const critDiff = +(baseline.critical_avg - optimized.critical_avg).toFixed(1);
-  const maxDiff = +(baseline.max_time - optimized.max_time).toFixed(1);
+  const totalDiff = +(Number(baseline.total_time || 0) - Number(optimized.total_time || 0)).toFixed(1);
+  const avgDiff = +(Number(baseline.avg_time || 0) - Number(optimized.avg_time || 0)).toFixed(1);
+  const critDiff = +(Number(baseline.critical_avg || 0) - Number(optimized.critical_avg || 0)).toFixed(1);
+  const maxDiff = +(Number(baseline.max_time || 0) - Number(optimized.max_time || 0)).toFixed(1);
 
   // Normalization for visual progress bars
   const maxScaleTime = Math.max(baseline.total_time, optimized.total_time, 80);

@@ -8,11 +8,15 @@ import {
 interface HeaderProps {
   isDarkMode: boolean;
   onToggleTheme: () => void;
+  onResetData?: () => void;
+  isResetting?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   isDarkMode,
   onToggleTheme,
+  onResetData,
+  isResetting,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs transition-colors">
@@ -51,6 +55,18 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
               System Ready
             </span>
+
+            {/* Reset Data Button */}
+            {onResetData && (
+              <button
+                onClick={onResetData}
+                disabled={isResetting}
+                className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-300 dark:border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-50 shadow-2xs"
+                title="Reset operational data back to standard prototype"
+              >
+                Reset Data
+              </button>
+            )}
 
             {/* Light / Dark Mode Toggle */}
             <button

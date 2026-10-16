@@ -106,6 +106,11 @@ def compute_performance_kpis(
         utilization = (len(allocs) / total_available_fleet) if total_available_fleet > 0 else 0.0
 
         return {
+            "total_time": round(sum(times), 2),
+            "avg_time": round(sum(times) / len(times), 2),
+            "critical_avg": round(crit_avg, 2),
+            "max_time": round(max(times), 2),
+            "utilization": round(utilization, 4),
             "total_response_time": round(sum(times), 2),
             "total_weighted_time": round(sum(weighted_times), 2),
             "avg_response_time": round(sum(times) / len(times), 2),

@@ -7,34 +7,32 @@ export interface Edge {
 
 export const CITY_GRAPH: Record<string, Edge[]> = {
   'Zone A': [
-    { to: 'Zone B', weight: 4 },
-    { to: 'Zone C', weight: 6 },
+    { to: 'Zone B', weight: 5 },
+    { to: 'Zone C', weight: 8 },
   ],
   'Zone B': [
-    { to: 'Zone A', weight: 4 },
-    { to: 'Zone C', weight: 5 },
-    { to: 'Zone D', weight: 8 },
+    { to: 'Zone A', weight: 5 },
+    { to: 'Zone C', weight: 7 },
+    { to: 'Zone D', weight: 6 },
   ],
   'Zone C': [
-    { to: 'Zone A', weight: 6 },
-    { to: 'Zone B', weight: 5 },
-    { to: 'Zone D', weight: 3 },
-    { to: 'Zone E', weight: 7 },
+    { to: 'Zone A', weight: 8 },
+    { to: 'Zone B', weight: 7 },
+    { to: 'Zone E', weight: 4 },
+    { to: 'Zone F', weight: 9 },
   ],
   'Zone D': [
-    { to: 'Zone B', weight: 8 },
-    { to: 'Zone C', weight: 3 },
-    { to: 'Zone E', weight: 4 },
+    { to: 'Zone B', weight: 6 },
+    { to: 'Zone E', weight: 3 },
     { to: 'Zone F', weight: 6 },
   ],
   'Zone E': [
-    { to: 'Zone C', weight: 7 },
-    { to: 'Zone D', weight: 4 },
-    { to: 'Zone F', weight: 5 },
+    { to: 'Zone C', weight: 4 },
+    { to: 'Zone D', weight: 3 },
   ],
   'Zone F': [
     { to: 'Zone D', weight: 6 },
-    { to: 'Zone E', weight: 5 },
+    { to: 'Zone C', weight: 9 },
   ],
 };
 

@@ -120,20 +120,32 @@ export async function getAmbulances(): Promise<Ambulance[]> {
  * 2. POST /ambulances
  */
 export async function addAmbulance(ambulance: Ambulance): Promise<Ambulance> {
-  fallbackAmbulances.push(ambulance);
   try {
     const res = await fetchWithTimeout(`${currentApiBaseUrl}/ambulances`, {
       method: 'POST',
       body: JSON.stringify(ambulance),
-    }, 1500);
+    }, 2500);
     if (res.ok) {
       const data = await res.json();
-      return data;
+      const created: Ambulance = data.ambulance || data;
+      if (!fallbackAmbulances.some((a) => a.amb_id === created.amb_id)) {
+        fallbackAmbulances.push(created);
+      }
+      return created;
+    } else {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Server returned error ${res.status}`);
     }
-  } catch {
-    // Seamless local handling
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('fetch') && !error.message.includes('Network') && !error.message.includes('Failed to fetch') && !error.name?.includes('AbortError')) {
+      throw error;
+    }
+    // Offline simulation fallback
+    if (!fallbackAmbulances.some((a) => a.amb_id === ambulance.amb_id)) {
+      fallbackAmbulances.push(ambulance);
+    }
+    return ambulance;
   }
-  return ambulance;
 }
 
 /**
@@ -194,20 +206,31 @@ export async function addEmergency(emergency: {
     status: 'Pending' as const,
   };
 
-  fallbackEmergencies.push(payload);
-
   try {
     const res = await fetchWithTimeout(`${currentApiBaseUrl}/emergencies`, {
       method: 'POST',
       body: JSON.stringify(payload),
-    }, 1500);
+    }, 2500);
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      const created: Emergency = data.emergency || data;
+      if (!fallbackEmergencies.some((e) => e.em_id === created.em_id)) {
+        fallbackEmergencies.push(created);
+      }
+      return created;
+    } else {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `Server returned error ${res.status}`);
     }
-  } catch {
-    // Seamless local handling
+  } catch (error: any) {
+    if (error?.message && !error.message.includes('fetch') && !error.message.includes('Network') && !error.message.includes('Failed to fetch') && !error.name?.includes('AbortError')) {
+      throw error;
+    }
+    if (!fallbackEmergencies.some((e) => e.em_id === payload.em_id)) {
+      fallbackEmergencies.push(payload);
+    }
+    return payload;
   }
-  return payload;
 }
 
 /**
@@ -226,7 +249,8 @@ export async function updateEmergencyStatus(
       body: JSON.stringify({ status }),
     }, 1500);
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      return data.emergency || data;
     }
   } catch {
     // Handled locally
@@ -248,9 +272,13 @@ export async function optimizeFleet(weighted = true): Promise<OptimizationRespon
     const res = await fetchWithTimeout(`${currentApiBaseUrl}/optimize`, {
       method: 'POST',
       body: JSON.stringify({ weighted }),
-    }, 2000);
+    }, 3000);
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      if (!data.unserved_emergencies && data.unserved) {
+        data.unserved_emergencies = data.unserved;
+      }
+      return data;
     }
   } catch {
     // Smooth fallback to local optimization solver
@@ -294,9 +322,23 @@ export async function computeRoute(start_zone: string, end_zone: string): Promis
  */
 export async function getAnalytics(): Promise<AnalyticsResponse> {
   try {
-    const res = await fetchWithTimeout(`${currentApiBaseUrl}/analytics`, {}, 1500);
+    const res = await fetchWithTimeout(`${currentApiBaseUrl}/analytics`, {}, 2500);
     if (res.ok) {
-      return await res.json();
+      const data = await res.json();
+      if (data && data.baseline && data.optimized) {
+        const normalize = (m: any) => ({
+          total_time: Number(m.total_time ?? m.total_response_time ?? 0),
+          avg_time: Number(m.avg_time ?? m.avg_response_time ?? 0),
+          critical_avg: Number(m.critical_avg ?? m.critical_avg_time ?? 0),
+          max_time: Number(m.max_time ?? m.max_response_time ?? 0),
+          utilization: Number(m.utilization ?? m.utilization_rate ?? 0),
+        });
+        return {
+          baseline: normalize(data.baseline),
+          optimized: normalize(data.optimized),
+          improvement_pct: Number(data.improvement_pct ?? data.critical_response_improvement_pct ?? 0),
+        };
+      }
     }
   } catch {
     // Smooth fallback to calculated analytics
